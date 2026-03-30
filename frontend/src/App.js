@@ -18,7 +18,6 @@ import Salary from './pages/Salary';
 import Complaints from './pages/Complaints';
 import Departments from './pages/Departments';
 import Attendance from './pages/Attendance';
-import EmployeeDashboard from './pages/EmployeeDashboard';
 
 const PrivateRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
@@ -56,9 +55,6 @@ function App() {
           <Route path="/hr/salary"       element={<PrivateRoute roles={['hr']}><Salary /></PrivateRoute>} />
           <Route path="/hr/attendance"   element={<PrivateRoute roles={['hr']}><Attendance /></PrivateRoute>} />
                     <Route path="/hr/complaints"   element={<PrivateRoute roles={['hr']}><Complaints /></PrivateRoute>} />
-
-          {/* Employee routes */}
-          <Route path="/employee" element={<PrivateRoute roles={['employee','hr']}><EmployeeDashboard /></PrivateRoute>} />
 
           {/* Redirects */}
           <Route path="/" element={<Navigate to="/login" />} />

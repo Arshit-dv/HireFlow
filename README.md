@@ -17,6 +17,13 @@ The **HR Recruitment & Management System** digitizes the entire journey of a tal
 
 ---
 
+## 🖼️ Animated Preview
+<p align="center">
+  <video src="screenshots/hr_demo.mp4" width="100%" autoplay loop muted></video>
+</p>
+
+---
+
 ## ✨ Features
 - **Recruitment Funnel**: Visual tracking of applicants through Screening, Interview, and Offer stages.
 - **Dynamic Payroll**: Generate monthly salary bills based on Payscale grades and performance.

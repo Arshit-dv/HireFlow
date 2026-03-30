@@ -23,6 +23,9 @@ const dbConfig = {
         ];
         for (const t of tables) await pool.query(`DELETE FROM ${t}`);
 
+        const hashed = require('bcryptjs').hashSync('admin123', 10);
+        await pool.query('INSERT INTO users (UserID, Username, PasswordHash, Role) VALUES (1, "admin", ?, "hr") ON DUPLICATE KEY UPDATE PasswordHash=?', [hashed, hashed]);
+
         // 🏗️ Step 1: Base Infrastructure (5 Departments, 5 Designations, 5 Payscales)
         const depts = ['Engineering', 'Marketing', 'Sales', 'Human Resources', 'Finance'];
         const roles = ['Software Developer', 'Marketing Lead', 'Sales Manager', 'HR Specialist', 'Financial Analyst'];
@@ -31,7 +34,8 @@ const dbConfig = {
             await pool.query('INSERT INTO designation (DesignationID, DeptID, Role, Vacancies, NoOfEmployees) VALUES (?, ?, ?, ?, ?)', [i, i, roles[i-1], 2, 8]);
             await pool.query('INSERT INTO payscale (PayscaleID, Grade, BaseSalary, HRA, DA, Others) VALUES (?, ?, ?, ?, ?, ?)', [i, `Grade ${i}`, 30000 + (i*10000), 7000, 4000, 3000]);
             await pool.query('INSERT INTO salary (SalaryID, SalaryAmount, SalaryDate) VALUES (?, ?, ?)', [i, 40000 + (i*10000), '2026-03-01']);
-            await pool.query('INSERT INTO contract (ContractID, ContractDate, NoticePeriod) VALUES (?, ?, ?)', [i, '2026-01-01', 30]);
+            const noticePeriods = [30, 45, 60, 90, 30];
+            await pool.query('INSERT INTO contract (ContractID, ContractDate, NoticePeriod) VALUES (?, ?, ?)', [i, '2026-01-01', noticePeriods[i-1]]);
         }
 
         // 👤 Life-Cycle 1: Fresh Applicant (Arunjit)
@@ -72,7 +76,7 @@ const dbConfig = {
         await pool.query('INSERT INTO offer (OfferID, CandidateID, SalaryID, ContractID, OfferStatus) VALUES (5, 5, 5, 5, "Accepted")');
         await pool.query('INSERT INTO awarded (OfferID, CandidateID, AwardedDate) VALUES (5, 5, "2026-02-15")');
         await pool.query('INSERT INTO training (CandidateID, TrainingStatus, TrainingStartDate, TrainingEndDate, Insights) VALUES (5, "Completed", "2026-02-16", "2026-03-01", "Ready for deployment")');
-        await pool.query('INSERT INTO employee (EmployeeID, SalaryID, DesignationID, ContractID, JoinDate, Performance, PayscaleID) VALUES (5, 5, 5, 5, "2026-03-02", "Exceeds Expectations", 5)');
+        await pool.query('INSERT INTO employee (EmployeeID, CandidateID, SalaryID, DesignationID, ContractID, JoinDate, Performance, PayscaleID) VALUES (5, 5, 5, 5, 5, "2026-03-02", "Exceeds Expectations", 5)');
         await pool.query('INSERT INTO employeecandidate (EmployeeID, CandidateID) VALUES (5, 5)');
         
         // Log attendance for employee 5

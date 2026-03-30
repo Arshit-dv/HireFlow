@@ -16,14 +16,10 @@ const hrLinks = [
   { to: '/hr/complaints',    label: 'Complaints',   icon: '📢' },
 ];
 
-const employeeLinks = [
-  { to: '/employee', label: 'My Dashboard', icon: '🏠' },
-];
-
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const links = user?.role === 'hr' ? hrLinks : employeeLinks;
+  const links = hrLinks;
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -34,12 +30,12 @@ const Sidebar = () => {
         <p>Recruitment &amp; Management</p>
       </div>
       <nav className="sidebar-nav">
-        <div className="sidebar-section">{user?.role === 'hr' ? 'HR Portal' : 'Employee Portal'}</div>
+        <div className="sidebar-section">Management Console</div>
         {links.map((l) => (
           <NavLink
             key={l.to}
             to={l.to}
-            end={l.to === '/hr' || l.to === '/employee'}
+            end={l.to === '/hr'}
             className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
           >
             <span className="icon">{l.icon}</span>
@@ -50,7 +46,7 @@ const Sidebar = () => {
       <div className="sidebar-footer">
         <div className="sidebar-user">
           <strong>{user?.username}</strong>
-          {user?.role?.toUpperCase()} Portal
+          HR Administrator
         </div>
         <button className="btn btn-outline btn-sm" onClick={handleLogout} style={{width:'100%'}}>
           🚪 Logout
