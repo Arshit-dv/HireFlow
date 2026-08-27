@@ -6,8 +6,8 @@ module.exports = {
   apps: [
     {
       name: 'hr-backend-api',
-      script: './backend/server.js',
-      cwd: '/home/ubuntu/app',
+      script: 'server.js',
+      cwd: '/home/ubuntu/app/backend',
       instances: 1,
       autorestart: true,
       watch: false,

@@ -55,7 +55,7 @@ CLIENT_ORIGIN=http://localhost
 JWT_SECRET=$(openssl rand -hex 32)
 JWT_EXPIRES_IN=7d
 HR_ADMIN_SECRET=admin123
-AWS_REGION=us-east-1
+AWS_REGION=ap-south-1
 AWS_S3_BUCKET=hr-proj-resume
 EOF
 
