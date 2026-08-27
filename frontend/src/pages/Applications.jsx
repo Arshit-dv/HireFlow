@@ -279,6 +279,22 @@ const Applications = () => {
                       : <span style={{ color: 'var(--text-muted)' }}>No projects documented</span>}
                   </div>
                 </div>
+                {detail.ResumeUrl && (
+                  <div className="form-group form-full">
+                    <label>Candidate Resume / CV</label>
+                    <div style={{ marginTop: 6 }}>
+                      <a
+                        href={detail.ResumeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-sm btn-primary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      >
+                        📄 Open Uploaded Resume in New Tab
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
               <button className="btn btn-outline" style={{ marginTop: 24, width: '100%' }} onClick={() => setDetail(null)}>Dismiss</button>
             </div>

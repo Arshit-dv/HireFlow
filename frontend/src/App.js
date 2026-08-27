@@ -18,6 +18,8 @@ import Salary from './pages/Salary';
 import Complaints from './pages/Complaints';
 import Departments from './pages/Departments';
 import Attendance from './pages/Attendance';
+import Analytics from './pages/Analytics';
+import EmployeeDashboard from './pages/EmployeeDashboard';
 
 const PrivateRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
@@ -44,17 +46,21 @@ function App() {
           <Route path="/apply"    element={<Apply />} />
 
           {/* HR routes */}
-          <Route path="/hr" element={<PrivateRoute roles={['hr']}><HRDashboard /></PrivateRoute>} />
-          <Route path="/hr/applications" element={<PrivateRoute roles={['hr']}><Applications /></PrivateRoute>} />
-          <Route path="/hr/candidates"   element={<PrivateRoute roles={['hr']}><Candidates /></PrivateRoute>} />
-          <Route path="/hr/interviews"   element={<PrivateRoute roles={['hr']}><Interviews /></PrivateRoute>} />
-          <Route path="/hr/offers"       element={<PrivateRoute roles={['hr']}><Offers /></PrivateRoute>} />
-          <Route path="/hr/training"     element={<PrivateRoute roles={['hr']}><Training /></PrivateRoute>} />
-          <Route path="/hr/employees"    element={<PrivateRoute roles={['hr']}><Employees /></PrivateRoute>} />
-          <Route path="/hr/departments"  element={<PrivateRoute roles={['hr']}><Departments /></PrivateRoute>} />
-          <Route path="/hr/salary"       element={<PrivateRoute roles={['hr']}><Salary /></PrivateRoute>} />
-          <Route path="/hr/attendance"   element={<PrivateRoute roles={['hr']}><Attendance /></PrivateRoute>} />
-                    <Route path="/hr/complaints"   element={<PrivateRoute roles={['hr']}><Complaints /></PrivateRoute>} />
+          <Route path="/hr"             element={<PrivateRoute roles={['hr']}><HRDashboard /></PrivateRoute>} />
+          <Route path="/hr/analytics"   element={<PrivateRoute roles={['hr']}><Analytics /></PrivateRoute>} />
+          <Route path="/hr/applications"element={<PrivateRoute roles={['hr']}><Applications /></PrivateRoute>} />
+          <Route path="/hr/candidates"  element={<PrivateRoute roles={['hr']}><Candidates /></PrivateRoute>} />
+          <Route path="/hr/interviews"  element={<PrivateRoute roles={['hr']}><Interviews /></PrivateRoute>} />
+          <Route path="/hr/offers"      element={<PrivateRoute roles={['hr']}><Offers /></PrivateRoute>} />
+          <Route path="/hr/training"    element={<PrivateRoute roles={['hr']}><Training /></PrivateRoute>} />
+          <Route path="/hr/employees"   element={<PrivateRoute roles={['hr']}><Employees /></PrivateRoute>} />
+          <Route path="/hr/departments" element={<PrivateRoute roles={['hr']}><Departments /></PrivateRoute>} />
+          <Route path="/hr/salary"      element={<PrivateRoute roles={['hr']}><Salary /></PrivateRoute>} />
+          <Route path="/hr/attendance"  element={<PrivateRoute roles={['hr']}><Attendance /></PrivateRoute>} />
+          <Route path="/hr/complaints"  element={<PrivateRoute roles={['hr']}><Complaints /></PrivateRoute>} />
+
+          {/* Employee Self-Service route */}
+          <Route path="/employee"       element={<PrivateRoute roles={['employee', 'hr']}><EmployeeDashboard /></PrivateRoute>} />
 
           {/* Redirects */}
           <Route path="/" element={<Navigate to="/login" />} />

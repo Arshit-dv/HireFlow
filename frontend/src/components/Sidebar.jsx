@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 const hrLinks = [
   { to: '/hr',               label: 'Dashboard',    icon: '📊' },
+  { to: '/hr/analytics',     label: 'SQL Analytics',icon: '📈' },
   { to: '/hr/applications',  label: 'Applications', icon: '📝' },
   { to: '/hr/candidates',    label: 'Candidates',   icon: '👥' },
   { to: '/hr/interviews',    label: 'Interviews',   icon: '🗓️'  },
@@ -21,7 +22,10 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const links = hrLinks;
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <aside className="sidebar">
@@ -45,10 +49,10 @@ const Sidebar = () => {
       </nav>
       <div className="sidebar-footer">
         <div className="sidebar-user">
-          <strong>{user?.username}</strong>
-          HR Administrator
+          <strong>{user?.username || 'Administrator'}</strong>
+          HR Management
         </div>
-        <button className="btn btn-outline btn-sm" onClick={handleLogout} style={{width:'100%'}}>
+        <button className="btn btn-outline btn-sm" onClick={handleLogout} style={{ width: '100%' }}>
           🚪 Logout
         </button>
       </div>

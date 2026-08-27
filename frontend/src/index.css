@@ -397,6 +397,27 @@ tbody tr:last-child td { border-bottom: none; }
   width: 100%;
 }
 
+/* ── Spinner & Loaders ────────────────────────────────────────── */
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  width: 100%;
+}
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 30px auto;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .main-content { margin-left: 0; padding: 16px; }
@@ -404,3 +425,4 @@ tbody tr:last-child td { border-bottom: none; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .filter-card { gap: 16px; padding: 16px; }
 }
+

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
+import { getOrgAnalytics, getSalaryAnalytics, getReadyToHireAnalytics } from '../services/api';
 
 const Analytics = () => {
   const [orgView, setOrgView] = useState([]);
@@ -13,14 +13,14 @@ const Analytics = () => {
     const fetchData = async () => {
       try {
         const [orgRes, salaryRes, readyRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/analytics/org-view', { withCredentials: true }),
-          axios.get('http://localhost:5000/api/analytics/salary-stats', { withCredentials: true }),
-          axios.get('http://localhost:5000/api/analytics/ready-to-hire', { withCredentials: true })
+          getOrgAnalytics(),
+          getSalaryAnalytics(),
+          getReadyToHireAnalytics(),
         ]);
 
-        if (orgRes.data.success) setOrgView(orgRes.data.data);
-        if (salaryRes.data.success) setSalaryStats(salaryRes.data.data);
-        if (readyRes.data.success) setReadyToHire(readyRes.data.data);
+        if (orgRes.data?.success) setOrgView(orgRes.data.data);
+        if (salaryRes.data?.success) setSalaryStats(salaryRes.data.data);
+        if (readyRes.data?.success) setReadyToHire(readyRes.data.data);
       } catch (err) {
         toast.error('Failed to load analytics data');
       } finally {
@@ -30,100 +30,140 @@ const Analytics = () => {
     fetchData();
   }, []);
 
-  if (loading) return <div className="spinner-container"><div className="spinner" /></div>;
-
   return (
-    <div className="dashboard-container">
+    <div className="app-layout">
       <Sidebar />
-      <div className="main-content analytics-page">
-        <header className="page-header">
-          <h1>📊 Advanced Data Analytics</h1>
-          <p>Real-time insights generated via complex SQL processing</p>
-        </header>
+      <main className="main-content">
+        <div className="page-header">
+          <h1>📊 Advanced Relational Analytics</h1>
+          <p>Real-time insights generated via complex SQL JOINs, Aggregations, and Subqueries</p>
+        </div>
 
-        <section className="analytics-section">
-          <h2>1. 🔗 Join Query: Organizational View</h2>
-          <p className="query-desc">Combines Employee, Designation, and Department tables via Foreign Key joins.</p>
-          <div className="table-responsive">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Employee ID</th>
-                  <th>Name</th>
-                  <th>Department</th>
-                  <th>Designation (Role)</th>
-                  <th>Performance</th>
-                  <th>Join Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orgView.map(e => (
-                  <tr key={e.EmployeeID}>
-                    <td>#{e.EmployeeID}</td>
-                    <td>{e.FirstName} {e.LastName}</td>
-                    <td><span className="badge-outline">{e.DeptName}</span></td>
-                    <td>{e.Role}</td>
-                    <td><span className={`performance-label ${e.Performance?.toLowerCase()}`}>{e.Performance}</span></td>
-                    <td>{new Date(e.JoinDate).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <div className="analytics-grid">
-          <section className="analytics-section aggregation-card">
-            <h2>2. 📈 Aggregation: Salary Stats</h2>
-            <p className="query-desc">Uses SUM(), AVG(), MIN(), and MAX() on the Salary table.</p>
-            {salaryStats && (
-              <div className="stats-list">
-                <div className="stat-item">
-                  <span className="label">Total Expenditure</span>
-                  <span className="value">₹{Number(salaryStats.TotalExpenditure).toLocaleString()}</span>
-                </div>
-                <div className="stat-item">
-                  <span className="label">Average Salary</span>
-                  <span className="value">₹{Math.round(salaryStats.AverageSalary).toLocaleString()}</span>
-                </div>
-                <div className="stat-item">
-                  <span className="label">Max Salary</span>
-                  <span className="value">₹{Number(salaryStats.MaxSalary).toLocaleString()}</span>
-                </div>
-                <div className="stat-item">
-                  <span className="label">Total Payments</span>
-                  <span className="value-small">{salaryStats.TotalPayments}</span>
-                </div>
+        {loading ? (
+          <div className="spinner" />
+        ) : (
+          <>
+            {/* Section 1: Complex 4-Table JOIN */}
+            <div className="card" style={{ marginBottom: 24 }}>
+              <div className="card-title">1. 🔗 Multi-Table Relational JOIN: Organizational Hierarchy</div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 16 }}>
+                Executes a 4-table SQL JOIN across <code>employee</code>, <code>designation</code>, <code>department</code>, and <code>application</code>.
+              </p>
+              <div className="table-wrapper">
+                {orgView.length === 0 ? (
+                  <div className="empty-state"><p>No employee records found</p></div>
+                ) : (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Emp ID</th>
+                        <th>Full Name</th>
+                        <th>Department</th>
+                        <th>Designation (Role)</th>
+                        <th>Performance</th>
+                        <th>Date of Joining</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orgView.map((e) => (
+                        <tr key={e.EmployeeID}>
+                          <td><strong>#{e.EmployeeID}</strong></td>
+                          <td><div style={{ fontWeight: 600 }}>{e.FirstName} {e.LastName}</div></td>
+                          <td><span className="badge badge-info">{e.DeptName}</span></td>
+                          <td>{e.Role}</td>
+                          <td>
+                            <span className={`badge ${e.Performance === 'Excellent' ? 'badge-success' : e.Performance === 'Good' ? 'badge-info' : 'badge-pending'}`}>
+                              {e.Performance}
+                            </span>
+                          </td>
+                          <td>{e.JoinDate?.split('T')[0]}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
-            )}
-          </section>
+            </div>
 
-          <section className="analytics-section filtering-card">
-            <h2>3. 🔍 Filtering: Ready to Hire</h2>
-            <p className="query-desc">Filters candidates who PASSED interviews but haven't accepted an offer yet.</p>
-            <div className="ready-list">
-              {readyToHire.length === 0 ? (
-                <p>No candidates currently in this stage.</p>
-              ) : (
-                readyToHire.map(c => (
-                  <div key={c.CandidateID} className="ready-item">
-                    <div className="info">
-                      <strong>{c.FirstName} {c.LastName}</strong>
-                      <span>{c.PreferredRole}</span>
+            {/* Section 2: Aggregations & Subquery Filters */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+              {/* Aggregation Card */}
+              <div className="card">
+                <div className="card-title">2. 📈 Statistical Aggregation: Payroll Metrics</div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 16 }}>
+                  Demonstrates <code>SUM()</code>, <code>AVG()</code>, <code>MAX()</code>, <code>MIN()</code> and <code>COUNT()</code>.
+                </p>
+                {salaryStats && (
+                  <div className="form-grid" style={{ gap: 16 }}>
+                    <div style={{ padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Payroll Expenditure</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--success)' }}>
+                        ₹{Number(salaryStats.TotalExpenditure || 0).toLocaleString()}
+                      </div>
                     </div>
-                    <div className="status">
-                      <span className="badge pass">{c.InterviewResult || 'Passed'}</span>
-                      <span className={`badge ${c.OfferStatus?.toLowerCase() || 'pending'}`}>
-                        Offer: {c.OfferStatus || 'Not Sent'}
-                      </span>
+                    <div style={{ padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Average Monthly Salary</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--info)' }}>
+                        ₹{Math.round(salaryStats.AverageSalary || 0).toLocaleString()}
+                      </div>
+                    </div>
+                    <div style={{ padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Highest Salary Package</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--accent)' }}>
+                        ₹{Number(salaryStats.MaxSalary || 0).toLocaleString()}
+                      </div>
+                    </div>
+                    <div style={{ padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Active Pay Structures</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>
+                        {salaryStats.TotalPayments || 0}
+                      </div>
                     </div>
                   </div>
-                ))
-              )}
+                )}
+              </div>
+
+              {/* Subquery Filter Card */}
+              <div className="card">
+                <div className="card-title">3. 🎯 Nested Subquery: Qualified &amp; Ready to Hire</div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 16 }}>
+                  Filters candidates who <code>PASSED</code> interviews but are not yet present in <code>employee</code> table.
+                </p>
+                <div className="table-wrapper" style={{ maxHeight: 260 }}>
+                  {readyToHire.length === 0 ? (
+                    <div className="empty-state" style={{ padding: 20 }}><p>All passed candidates have been hired!</p></div>
+                  ) : (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Cand. ID</th>
+                          <th>Candidate Name</th>
+                          <th>Role</th>
+                          <th>Offer Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {readyToHire.map((c) => (
+                          <tr key={c.CandidateID}>
+                            <td><strong>#{c.CandidateID}</strong></td>
+                            <td>{c.FirstName} {c.LastName}</td>
+                            <td><span className="badge badge-info">{c.PreferredRole}</span></td>
+                            <td>
+                              <span className={`badge ${c.OfferStatus === 'Accepted' ? 'badge-success' : c.OfferStatus ? 'badge-pending' : 'badge-neutral'}`}>
+                                {c.OfferStatus ? `Offer: ${c.OfferStatus}` : 'Offer Pending'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
             </div>
-          </section>
-        </div>
-      </div>
+          </>
+        )}
+      </main>
     </div>
   );
 };

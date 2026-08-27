@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-// GET /api/training  — HR
+// GET /api/training  — HR (MySQL 8.0 ONLY_FULL_GROUP_BY compatible)
 const getAllTraining = async (req, res, next) => {
   try {
     const [rows] = await pool.query(
@@ -16,30 +16,39 @@ const getAllTraining = async (req, res, next) => {
        LEFT JOIN resume r           ON c.ApplicationID = r.ApplicationID
        LEFT JOIN employeetraining et ON t.CandidateID = et.CandidateID
        LEFT JOIN employee e         ON t.CandidateID = e.CandidateID
-       GROUP BY t.CandidateID
+       GROUP BY t.CandidateID, t.TrainingStatus, t.TrainingStartDate, t.TrainingEndDate, t.Insights
        ORDER BY t.TrainingStartDate DESC`
     );
     res.json({ success: true, count: rows.length, data: rows });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };
 
 // POST /api/training  — HR: start training for awarded candidate
-// Body: { CandidateID, TrainingStartDate, Insights, TrainerEmployeeIDs[] }
 const startTraining = async (req, res, next) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
     const { CandidateID, TrainingStartDate, Insights = '', TrainerEmployeeIDs = [] } = req.body;
     if (!CandidateID || !TrainingStartDate) {
+      await conn.rollback();
       return res.status(400).json({ success: false, message: 'CandidateID and TrainingStartDate are required' });
     }
+
     // Verify candidate has been awarded an offer
     const [[award]] = await conn.query('SELECT CandidateID FROM awarded WHERE CandidateID = ?', [CandidateID]);
-    if (!award) return res.status(400).json({ success: false, message: 'Candidate must have accepted an offer before training' });
+    if (!award) {
+      await conn.rollback();
+      return res.status(400).json({ success: false, message: 'Candidate must have accepted an offer before training can begin' });
+    }
 
     // Check training not already started
     const [[existing]] = await conn.query('SELECT CandidateID FROM training WHERE CandidateID = ?', [CandidateID]);
-    if (existing) return res.status(409).json({ success: false, message: 'Training already started for this candidate' });
+    if (existing) {
+      await conn.rollback();
+      return res.status(409).json({ success: false, message: 'Training has already been started for this candidate' });
+    }
 
     await conn.query(
       'INSERT INTO training (CandidateID, TrainingStatus, TrainingStartDate, Insights) VALUES (?, ?, ?, ?)',
@@ -49,7 +58,8 @@ const startTraining = async (req, res, next) => {
     // Add trainer employees
     for (const empID of TrainerEmployeeIDs) {
       const [[exists]] = await conn.query(
-        'SELECT EmployeeID FROM employeetraining WHERE EmployeeID=? AND CandidateID=?', [empID, CandidateID]
+        'SELECT ID FROM employeetraining WHERE EmployeeID=? AND CandidateID=?',
+        [empID, CandidateID]
       );
       if (!exists) {
         await conn.query('INSERT INTO employeetraining (EmployeeID, CandidateID) VALUES (?, ?)', [empID, CandidateID]);
@@ -57,15 +67,16 @@ const startTraining = async (req, res, next) => {
     }
 
     await conn.commit();
-    res.status(201).json({ success: true, message: 'Training started', CandidateID });
+    res.status(201).json({ success: true, message: 'Training started successfully', CandidateID });
   } catch (err) {
     await conn.rollback();
     next(err);
-  } finally { conn.release(); }
+  } finally {
+    conn.release();
+  }
 };
 
 // PATCH /api/training/:candidateId/complete  — HR: finish training
-// Body: { TrainingEndDate, Insights }
 const completeTraining = async (req, res, next) => {
   try {
     const { TrainingEndDate, Insights } = req.body;
@@ -74,15 +85,16 @@ const completeTraining = async (req, res, next) => {
 
     const [result] = await pool.query(
       "UPDATE training SET TrainingStatus='Completed', TrainingEndDate=?, Insights=COALESCE(?,Insights) WHERE CandidateID=?",
-      [endDate, Insights, CandidateID]
+      [endDate, Insights || null, CandidateID]
     );
     if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Training record not found' });
-    res.json({ success: true, message: 'Training completed. Ready to convert to employee.' });
-  } catch (err) { next(err); }
+    res.json({ success: true, message: 'Training marked as Completed. Ready to convert candidate to active Employee.' });
+  } catch (err) {
+    next(err);
+  }
 };
 
-// POST /api/training/:candidateId/feedback  — add/update trainer feedback
-// Body: { EmployeeID, Feedback }
+// POST /api/training/:candidateId/feedback  — add trainer feedback
 const addTrainerFeedback = async (req, res, next) => {
   try {
     const { EmployeeID, Feedback } = req.body;
@@ -90,8 +102,10 @@ const addTrainerFeedback = async (req, res, next) => {
       'UPDATE employeetraining SET Feedback=? WHERE EmployeeID=? AND CandidateID=?',
       [Feedback, EmployeeID, req.params.candidateId]
     );
-    res.json({ success: true, message: 'Feedback saved' });
-  } catch (err) { next(err); }
+    res.json({ success: true, message: 'Trainer feedback saved successfully' });
+  } catch (err) {
+    next(err);
+  }
 };
 
 // DELETE /api/training/:candidateId  — HR
@@ -100,15 +114,15 @@ const deleteTraining = async (req, res, next) => {
   try {
     await conn.beginTransaction();
     const CandidateID = req.params.candidateId;
-    
+
     await conn.query('DELETE FROM employeetraining WHERE CandidateID = ?', [CandidateID]);
     const [result] = await conn.query('DELETE FROM training WHERE CandidateID = ?', [CandidateID]);
-    
+
     await conn.commit();
     if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Training record not found' });
-    res.json({ success: true, message: 'Training record deleted' });
+    res.json({ success: true, message: 'Training record deleted successfully' });
   } catch (err) {
-    if (conn) await conn.rollback();
+    await conn.rollback();
     next(err);
   } finally {
     conn.release();

@@ -1,89 +1,101 @@
 # 🚀 HR Recruitment & Management System
 
-A comprehensive full-stack Human Resource management platform designed to automate the recruitment lifecycle and organize organizational data. This system bridges the gap between manual job applications and complex enterprise HR suites.
+A comprehensive full-stack Human Resource management platform designed to automate the recruitment lifecycle, payroll, attendance, and organizational governance. Backed by a normalized **MySQL** relational database and built for **Zero-Cost AWS EC2 & S3 Deployment**.
 
 ---
 
 ## 📂 Project Overview
-The **HR Recruitment & Management System** digitizes the entire journey of a talent—from their initial application to their management as an active employee. It features a robust **React** frontend for HR managers and a high-performance **Node.js/Express** backend backed by a relational **MySQL** database.
+The **HR Recruitment & Management System** digitizes the entire journey of talent—from their initial application and resume ingestion to active employee payroll and internal grievances.
 
 ### Core Lifecycle Flow:
-1.  **Application**: New job seekers submit their details and resumes.
-2.  **Screening**: HR reviews applications and "Qualifies" them to become Candidates.
-3.  **Interviewing**: Scheduling and tracking interview outcomes (Pass/Fail).
-4.  **Hiring**: Generating salary offers and contract templates.
-5.  **Training**: Managing orientation and training progress for new hires.
-6.  **Employment**: Converting successful trainees into full-time employees with automated payroll and complaint tracking.
+1. **Application**: Job seekers submit credentials and upload resumes (stored via AWS S3 / Cloud Storage).
+2. **Screening**: HR reviews talent dossiers and qualifies applicants into Candidates.
+3. **Interviewing**: HR schedules interviews and records outcomes (Pass/Fail) with assigned employee interviewers.
+4. **Offer Generation**: Creating formal salary offers linked to contract notice periods.
+5. **Training**: Tracking orientation milestones with assigned employee mentors.
+6. **Employment**: Converting successful trainees into active Employees with dynamic payroll and grievance tracking.
 
 ---
 
-## 🖼️ Animated Preview
-<p align="center">
-  <video src="screenshots/hr_demo.mp4" width="100%" autoplay loop muted></video>
-</p>
-
----
-
-## ✨ Features
-- **Recruitment Funnel**: Visual tracking of applicants through Screening, Interview, and Offer stages.
-- **Dynamic Payroll**: Generate monthly salary bills based on Payscale grades and performance.
-- **Org Management**: Hierarchical view of Departments and Designations with live vacancy tracking.
-- **Training Module**: Track training progress and assign senior employees as trainers.
-- **Complaint System**: Employee grievance portal with priority and status management.
-- **Live Search & Analytics**: Instant filtering of salaries, candidates, and organizational metrics.
-- **Modern UI**: Polished, dark-themed dashboard built for high usability.
+## ✨ Key Features
+- **Recruitment Funnel**: Visual tracking of applicants through Screening, Interview, Offer, and Training stages.
+- **Dynamic Payroll**: Generate monthly salary slips based on Payscale grades, HRA, DA, and allowances.
+- **Org Management**: Department hierarchy and role definitions with live vacancy and headcount tracking.
+- **SQL Analytics**: Live multi-table relational JOINs, aggregations, and subquery filters.
+- **Employee Self-Service**: Dedicated portal for employees to view payslips, check attendance logs, and log grievances.
+- **Cloud Resume Storage**: AWS S3 integration with IAM Role support and local disk fallback.
+- **Enterprise Security**: Role-based access control (RBAC), bcrypt password hashing, JWT authentication, helmet headers, and rate limiting.
 
 ---
 
 ## 🛠️ Technology Stack
-- **Frontend**: React.js (Vite), Axios, React Hot Toast (Notifications), Lucide Icons.
-- **Backend**: Node.js, Express.js, JWT (Authentication), MySQL2/Promise.
-- **Database**: MySQL 8.0+ (Relational Schema with constraints).
-- **Styling**: Vanilla CSS (Modern CSS variables, Flexbox/Grid).
+- **Frontend**: React.js, React Router v6, Axios, React Hot Toast.
+- **Backend**: Node.js, Express.js, JWT, Helmet, Express Rate Limit, Multer, AWS SDK v3.
+- **Database**: MySQL 8.0+ (20-table normalized relational schema with constraints).
+- **Cloud & Deployment**: AWS EC2 (Free Tier `t2.micro`/`t3.micro`), AWS S3, AWS IAM Role, Nginx, PM2.
 
 ---
 
-## 📊 Database Schema Explanation
-The system relies on a normalized relational schema to ensure strict data integrity.
-
-### Key Entities:
-- **`application`**: Master record of everyone who applies.
-- **`candidate`**: High-potential applicants who have cleared initial screening.
-- **`employee`**: Finalized hires linked to their original application via an `EmployeeID`.
-- **`department` & `designation`**: Define the organizational hierarchy and vacancies.
-- **`salary` & `payscale`**: Manage pay grades, monthly amounts, and structure history.
-- **`training`**: Tracks the orientation phase of candidates who accepted offers.
-- **`employeecandidate`**: A many-to-many junction table used for linking interviewers and trainers to recruits.
-
----
-
-## 🚀 Getting Started
+## 🚀 Getting Started Locally
 
 ### 1. Database Setup
-1.  Install MySQL and create a database named `hr_recruitment_db`.
-2.  Run the script located in `database/create_db.sql` to initialize the tables.
-3.  (Optional) Run `node backend/seeder.js` to populate the system with professional demo data.
+1. Open MySQL and create a database:
+   ```sql
+   CREATE DATABASE hr_recruitment_db;
+   ```
+2. Import the canonical schema:
+   ```bash
+   mysql -u root -p hr_recruitment_db < database/schema.sql
+   ```
+3. Populate demo data with complete lifecycle records:
+   ```bash
+   cd backend
+   node seeder.js
+   ```
 
-### 2. Backend Config
-1.  Navigate to `backend/`.
-2.  Create a `.env` file from the `.env.example`.
-3.  Update your `DB_USER`, `DB_PASSWORD`, and `DB_NAME`.
-4.  Run `npm install` and then `npm start`.
+### 2. Backend Setup
+1. In `backend/`, copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+2. Update your MySQL credentials (`DB_USER`, `DB_PASSWORD`).
+3. Start the API server:
+   ```bash
+   npm install
+   npm start
+   ```
 
-### 3. Frontend Config
-1.  Navigate to `frontend/`.
-2.  Run `npm install`.
-3.  Run `npm run dev` to launch the dashboard.
+### 3. Frontend Setup
+1. In `frontend/`:
+   ```bash
+   npm install
+   npm start
+   ```
+2. Open `http://localhost:3000` in your browser.
 
 ---
 
-## 📂 Directory Structure
-- `backend/`: Node.js API, controllers, and database configuration.
-- `frontend/`: React source code, components, and styling.
-- `database/`: SQL scripts for schema initialization.
-- `docs/`: Supplementary documentation and report content.
+## 🔑 Default Demo Credentials
+
+| Role | Username | Password | Dashboard Access |
+| :--- | :--- | :--- | :--- |
+| **HR Administrator** | `admin` | `admin123` | Full HR Console (`/hr`) & Analytics |
+| **Active Employee** | `eva` | `user123` | Employee Self-Service Portal (`/employee`) |
+
+---
+
+## ☁️ Zero-Cost AWS EC2 Deployment
+
+Follow our student-friendly deployment guide in **[`docs/AWS_DEPLOYMENT_GUIDE.md`](docs/AWS_DEPLOYMENT_GUIDE.md)** to deploy the full stack on AWS Free Tier:
+1. Launch an Ubuntu `t2.micro` or `t3.micro` EC2 instance with an IAM Role attached for S3.
+2. Clone this repository on EC2.
+3. Run the one-click provisioning script:
+   ```bash
+   chmod +x setup_ec2.sh
+   ./setup_ec2.sh
+   ```
 
 ---
 
 ## 📝 License
-This project is developed for educational purposes in HR Management and Database Systems.
+Developed for educational purposes in Relational Database Management Systems and Cloud Computing.

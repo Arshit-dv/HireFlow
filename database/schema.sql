@@ -1,192 +1,273 @@
 -- ============================================================
--- HR Recruitment & Management System — Database Setup
--- Run this ONLY if you haven't already created the tables.
--- If your tables already exist, skip creation and only run
--- the INSERT statements at the bottom for seed data.
+-- HR Recruitment & Management System — Canonical Database Schema
+-- Compatible with MySQL 8.0+ & Relational DBMS Requirements
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS hr_recruitment_db;
 USE hr_recruitment_db;
 
--- ── Users (for authentication) ────────────────────────────────
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ── 1. Users (Authentication & Role Management) ───────────────
 CREATE TABLE IF NOT EXISTS users (
-  user_id       INT AUTO_INCREMENT PRIMARY KEY,
-  username      VARCHAR(100) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  role          ENUM('hr','employee','candidate') NOT NULL DEFAULT 'candidate',
-  created_at    DATETIME DEFAULT NOW()
+  UserID       INT AUTO_INCREMENT PRIMARY KEY,
+  Username     VARCHAR(100) NOT NULL UNIQUE,
+  PasswordHash VARCHAR(255) NOT NULL,
+  Role         ENUM('hr', 'employee') NOT NULL DEFAULT 'employee',
+  ReferenceID  INT DEFAULT NULL,   -- Links to EmployeeID for employee logins
+  CreatedAt    DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- ── Application ───────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS application (
-  application_id  INT AUTO_INCREMENT PRIMARY KEY,
-  first_name      VARCHAR(100) NOT NULL,
-  last_name       VARCHAR(100) NOT NULL,
-  email           VARCHAR(150) NOT NULL,
-  phone           VARCHAR(20),
-  position_applied VARCHAR(150) NOT NULL,
-  resume_url      VARCHAR(255),
-  cover_letter    TEXT,
-  status          ENUM('pending','reviewed','shortlisted','rejected') DEFAULT 'pending',
-  applied_date    DATETIME DEFAULT NOW()
-);
-
--- ── Candidate ─────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS candidate (
-  candidate_id    INT AUTO_INCREMENT PRIMARY KEY,
-  application_id  INT,
-  first_name      VARCHAR(100) NOT NULL,
-  last_name       VARCHAR(100) NOT NULL,
-  email           VARCHAR(150),
-  phone           VARCHAR(20),
-  position_applied VARCHAR(150),
-  screening_notes TEXT,
-  screening_score DECIMAL(5,2),
-  status          ENUM('screening','interview','offered','hired','rejected') DEFAULT 'screening',
-  created_at      DATETIME DEFAULT NOW(),
-  FOREIGN KEY (application_id) REFERENCES application(application_id) ON DELETE SET NULL
-);
-
--- ── Interview ─────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS interview (
-  interview_id    INT AUTO_INCREMENT PRIMARY KEY,
-  candidate_id    INT NOT NULL,
-  interview_date  DATE NOT NULL,
-  interview_time  TIME NOT NULL,
-  interview_type  ENUM('in-person','online','phone') DEFAULT 'in-person',
-  interviewer_name VARCHAR(150),
-  location        VARCHAR(255),
-  notes           TEXT,
-  status          ENUM('scheduled','completed','cancelled') DEFAULT 'scheduled',
-  result          ENUM('pass','fail','pending') DEFAULT 'pending',
-  feedback        TEXT,
-  score           DECIMAL(5,2),
-  created_at      DATETIME DEFAULT NOW(),
-  FOREIGN KEY (candidate_id) REFERENCES candidate(candidate_id) ON DELETE CASCADE
-);
-
--- ── Department ────────────────────────────────────────────────
+-- ── 2. Department ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS department (
-  department_id   INT AUTO_INCREMENT PRIMARY KEY,
-  department_name VARCHAR(150) NOT NULL UNIQUE,
-  head_of_department VARCHAR(150),
-  description     TEXT
+  DeptID            INT PRIMARY KEY,
+  DeptName          VARCHAR(150) NOT NULL UNIQUE,
+  DeptVacancies     INT DEFAULT 0,
+  DeptPerformance   VARCHAR(50) DEFAULT 'Good',
+  DeptNoOfEmployees INT DEFAULT 0
 );
 
--- ── Designation ───────────────────────────────────────────────
+-- ── 3. Designation (Job Roles linked to Department) ───────────
 CREATE TABLE IF NOT EXISTS designation (
-  designation_id  INT AUTO_INCREMENT PRIMARY KEY,
-  designation_title VARCHAR(150) NOT NULL,
-  department_id   INT,
-  description     TEXT,
-  FOREIGN KEY (department_id) REFERENCES department(department_id) ON DELETE SET NULL
+  DesignationID  INT PRIMARY KEY,
+  DeptID         INT,
+  Role           VARCHAR(150) NOT NULL,
+  Vacancies      INT DEFAULT 0,
+  NoOfEmployees  INT DEFAULT 0,
+  FOREIGN KEY (DeptID) REFERENCES department(DeptID) ON DELETE SET NULL
 );
 
--- ── Employee ──────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS employee (
-  employee_id     INT AUTO_INCREMENT PRIMARY KEY,
-  candidate_id    INT,
-  first_name      VARCHAR(100) NOT NULL,
-  last_name       VARCHAR(100) NOT NULL,
-  email           VARCHAR(150),
-  phone           VARCHAR(20),
-  department_id   INT,
-  designation_id  INT,
-  date_of_joining DATE,
-  basic_salary    DECIMAL(10,2) DEFAULT 0,
-  status          ENUM('active','inactive','terminated') DEFAULT 'active',
-  created_at      DATETIME DEFAULT NOW(),
-  FOREIGN KEY (candidate_id)   REFERENCES candidate(candidate_id) ON DELETE SET NULL,
-  FOREIGN KEY (department_id)  REFERENCES department(department_id) ON DELETE SET NULL,
-  FOREIGN KEY (designation_id) REFERENCES designation(designation_id) ON DELETE SET NULL
+-- ── 4. Payscale (Pay Grades & Allowance Breakdown) ────────────
+CREATE TABLE IF NOT EXISTS payscale (
+  PayscaleID INT PRIMARY KEY,
+  Grade      VARCHAR(50) NOT NULL,
+  BaseSalary DECIMAL(10,2) NOT NULL,
+  HRA        DECIMAL(10,2) DEFAULT 0,
+  DA         DECIMAL(10,2) DEFAULT 0,
+  Others     DECIMAL(10,2) DEFAULT 0
 );
 
--- ── Offer Letter ──────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS offer_letter (
-  offer_id        INT AUTO_INCREMENT PRIMARY KEY,
-  candidate_id    INT NOT NULL,
-  salary_offered  DECIMAL(10,2) NOT NULL,
-  position        VARCHAR(150) NOT NULL,
-  joining_date    DATE NOT NULL,
-  offer_expiry    DATE,
-  benefits        TEXT,
-  notes           TEXT,
-  status          ENUM('pending','accepted','rejected','expired') DEFAULT 'pending',
-  generated_at    DATETIME DEFAULT NOW(),
-  responded_at    DATETIME,
-  FOREIGN KEY (candidate_id) REFERENCES candidate(candidate_id) ON DELETE CASCADE
-);
-
--- ── Training ──────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS training (
-  training_id     INT AUTO_INCREMENT PRIMARY KEY,
-  candidate_id    INT,
-  employee_id     INT,
-  training_name   VARCHAR(200) NOT NULL,
-  trainer         VARCHAR(150),
-  start_date      DATE NOT NULL,
-  end_date        DATE,
-  description     TEXT,
-  status          ENUM('ongoing','completed','cancelled') DEFAULT 'ongoing',
-  created_at      DATETIME DEFAULT NOW(),
-  FOREIGN KEY (candidate_id) REFERENCES candidate(candidate_id) ON DELETE SET NULL,
-  FOREIGN KEY (employee_id)  REFERENCES employee(employee_id) ON DELETE SET NULL
-);
-
--- ── Salary ────────────────────────────────────────────────────
+-- ── 5. Salary (Salary Structures) ─────────────────────────────
 CREATE TABLE IF NOT EXISTS salary (
-  salary_id       INT AUTO_INCREMENT PRIMARY KEY,
-  employee_id     INT NOT NULL,
-  basic           DECIMAL(10,2) NOT NULL,
-  allowances      DECIMAL(10,2) DEFAULT 0,
-  deductions      DECIMAL(10,2) DEFAULT 0,
-  net_salary      DECIMAL(10,2) NOT NULL,
-  payment_date    DATE NOT NULL,
-  payment_mode    ENUM('bank_transfer','cash','cheque') DEFAULT 'bank_transfer',
-  status          ENUM('paid','pending') DEFAULT 'paid',
-  FOREIGN KEY (employee_id) REFERENCES employee(employee_id) ON DELETE CASCADE
+  SalaryID     INT PRIMARY KEY,
+  SalaryAmount DECIMAL(10,2) NOT NULL,
+  SalaryDate   DATE
 );
 
--- ── Contract ──────────────────────────────────────────────────
+-- ── 6. Contract (Contract Terms & Notice Periods) ─────────────
 CREATE TABLE IF NOT EXISTS contract (
-  contract_id     INT AUTO_INCREMENT PRIMARY KEY,
-  employee_id     INT NOT NULL,
-  contract_type   ENUM('permanent','contract','internship','probation') DEFAULT 'permanent',
-  start_date      DATE NOT NULL,
-  end_date        DATE,
-  terms           TEXT,
-  status          ENUM('active','expired','terminated') DEFAULT 'active',
-  created_at      DATETIME DEFAULT NOW(),
-  FOREIGN KEY (employee_id) REFERENCES employee(employee_id) ON DELETE CASCADE
+  ContractID   INT PRIMARY KEY,
+  ContractDate DATE,
+  NoticePeriod INT NOT NULL
 );
 
--- ── Complaint ─────────────────────────────────────────────────
+-- ── 7. Application (Talent Pool Intake) ───────────────────────
+CREATE TABLE IF NOT EXISTS application (
+  ApplicationID   INT PRIMARY KEY,
+  FirstName       VARCHAR(100) NOT NULL,
+  LastName        VARCHAR(100) NOT NULL,
+  PreferredRole   VARCHAR(150) NOT NULL,
+  ApplicationDate DATE NOT NULL,
+  ResumeUrl       VARCHAR(500) DEFAULT NULL
+);
+
+-- ── 8. Resume (Applicant Education & Experience) ──────────────
+CREATE TABLE IF NOT EXISTS resume (
+  ApplicationID      INT PRIMARY KEY,
+  Qualification      VARCHAR(150) NOT NULL,
+  Specialization     VARCHAR(150) DEFAULT 'General',
+  YearsOfExperience  INT DEFAULT 0,
+  FOREIGN KEY (ApplicationID) REFERENCES application(ApplicationID) ON DELETE CASCADE
+);
+
+-- ── 9. Resume Skills ──────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS resumeskills (
+  SkillID       INT AUTO_INCREMENT PRIMARY KEY,
+  ApplicationID INT NOT NULL,
+  Skill         VARCHAR(100) NOT NULL,
+  FOREIGN KEY (ApplicationID) REFERENCES application(ApplicationID) ON DELETE CASCADE
+);
+
+-- ── 10. Resume Projects ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS resumeprojects (
+  ProjectID     INT AUTO_INCREMENT PRIMARY KEY,
+  ApplicationID INT NOT NULL,
+  Project       VARCHAR(255) NOT NULL,
+  FOREIGN KEY (ApplicationID) REFERENCES application(ApplicationID) ON DELETE CASCADE
+);
+
+-- ── 11. Candidate (Qualified Applicants) ──────────────────────
+CREATE TABLE IF NOT EXISTS candidate (
+  CandidateID    INT PRIMARY KEY,
+  ApplicationID  INT,
+  ExpectedSalary DECIMAL(10,2) DEFAULT 0,
+  Potential      ENUM('High', 'Medium', 'Low') DEFAULT 'Medium',
+  FOREIGN KEY (ApplicationID) REFERENCES application(ApplicationID) ON DELETE SET NULL
+);
+
+-- ── 12. Screening (HR Evaluation & Shortlisting) ──────────────
+CREATE TABLE IF NOT EXISTS screening (
+  ScreeningID     INT AUTO_INCREMENT PRIMARY KEY,
+  ApplicationID   INT NOT NULL,
+  CandidateID     INT NOT NULL,
+  ScreeningStatus VARCHAR(50) DEFAULT 'Passed',
+  ScreeningDate   DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (ApplicationID) REFERENCES application(ApplicationID) ON DELETE CASCADE,
+  FOREIGN KEY (CandidateID)   REFERENCES candidate(CandidateID) ON DELETE CASCADE
+);
+
+-- ── 13. Interview (Interview Scheduling & Results) ────────────
+CREATE TABLE IF NOT EXISTS interview (
+  InterviewID     INT PRIMARY KEY,
+  CandidateID     INT NOT NULL,
+  InterviewDate   DATE NOT NULL,
+  Time            TIME NOT NULL,
+  Venue           VARCHAR(255) DEFAULT 'Online',
+  InterviewStatus ENUM('Scheduled', 'Passed', 'Failed', 'Cancelled') DEFAULT 'Scheduled',
+  FOREIGN KEY (CandidateID) REFERENCES candidate(CandidateID) ON DELETE CASCADE
+);
+
+-- ── 14. Offer (Offer Generation) ──────────────────────────────
+CREATE TABLE IF NOT EXISTS offer (
+  OfferID       INT PRIMARY KEY,
+  CandidateID   INT NOT NULL,
+  SalaryID      INT NOT NULL,
+  ContractID    INT NOT NULL,
+  DateGenerated DATE NOT NULL,
+  UpdatedDate   DATE DEFAULT NULL,
+  OfferStatus   ENUM('Pending', 'Accepted', 'Rejected', 'Expired') DEFAULT 'Pending',
+  FOREIGN KEY (CandidateID) REFERENCES candidate(CandidateID) ON DELETE CASCADE,
+  FOREIGN KEY (SalaryID)    REFERENCES salary(SalaryID) ON DELETE CASCADE,
+  FOREIGN KEY (ContractID)  REFERENCES contract(ContractID) ON DELETE CASCADE
+);
+
+-- ── 15. Awarded (Offer Acceptance & Confirmation) ─────────────
+CREATE TABLE IF NOT EXISTS awarded (
+  AwardID     INT AUTO_INCREMENT PRIMARY KEY,
+  OfferID     INT NOT NULL,
+  CandidateID INT NOT NULL,
+  AwardedDate DATE NOT NULL,
+  AwardedTime TIME NOT NULL,
+  FOREIGN KEY (OfferID)     REFERENCES offer(OfferID) ON DELETE CASCADE,
+  FOREIGN KEY (CandidateID) REFERENCES candidate(CandidateID) ON DELETE CASCADE
+);
+
+-- ── 16. Training (Orientation & Preparation) ──────────────────
+CREATE TABLE IF NOT EXISTS training (
+  TrainingID        INT AUTO_INCREMENT PRIMARY KEY,
+  CandidateID       INT NOT NULL UNIQUE,
+  TrainingStatus    ENUM('Ongoing', 'Completed', 'Cancelled') DEFAULT 'Ongoing',
+  TrainingStartDate DATE NOT NULL,
+  TrainingEndDate   DATE DEFAULT NULL,
+  Insights          TEXT,
+  FOREIGN KEY (CandidateID) REFERENCES candidate(CandidateID) ON DELETE CASCADE
+);
+
+-- ── 17. Employee Training Junction (Trainers Assigned) ────────
+CREATE TABLE IF NOT EXISTS employeetraining (
+  ID          INT AUTO_INCREMENT PRIMARY KEY,
+  EmployeeID  INT NOT NULL,
+  CandidateID INT NOT NULL,
+  Feedback    TEXT,
+  FOREIGN KEY (CandidateID) REFERENCES candidate(CandidateID) ON DELETE CASCADE
+);
+
+-- ── 18. Employee (Active Full-Time Staff) ─────────────────────
+CREATE TABLE IF NOT EXISTS employee (
+  EmployeeID    INT PRIMARY KEY,
+  CandidateID   INT DEFAULT NULL,
+  SalaryID      INT DEFAULT NULL,
+  DesignationID INT DEFAULT NULL,
+  ContractID    INT DEFAULT NULL,
+  JoinDate      DATE NOT NULL,
+  Performance   ENUM('Excellent', 'Good', 'Average', 'Poor') DEFAULT 'Good',
+  PayscaleID    INT DEFAULT NULL,
+  FOREIGN KEY (CandidateID)   REFERENCES candidate(CandidateID) ON DELETE SET NULL,
+  FOREIGN KEY (SalaryID)      REFERENCES salary(SalaryID) ON DELETE SET NULL,
+  FOREIGN KEY (DesignationID) REFERENCES designation(DesignationID) ON DELETE SET NULL,
+  FOREIGN KEY (ContractID)    REFERENCES contract(ContractID) ON DELETE SET NULL,
+  FOREIGN KEY (PayscaleID)    REFERENCES payscale(PayscaleID) ON DELETE SET NULL
+);
+
+-- ── 19. Employee Candidate Junction (History & Interviewers) ──
+CREATE TABLE IF NOT EXISTS employeecandidate (
+  ID          INT AUTO_INCREMENT PRIMARY KEY,
+  EmployeeID  INT NOT NULL,
+  CandidateID INT NOT NULL,
+  FOREIGN KEY (EmployeeID) REFERENCES employee(EmployeeID) ON DELETE CASCADE,
+  FOREIGN KEY (CandidateID) REFERENCES candidate(CandidateID) ON DELETE CASCADE
+);
+
+-- ── 20. Attendance (Daily Check-ins & Leaves) ─────────────────
+CREATE TABLE IF NOT EXISTS attendance (
+  AttendanceID INT PRIMARY KEY,
+  EmployeeID   INT NOT NULL,
+  Date         DATE NOT NULL,
+  Status       ENUM('Present', 'Absent', 'Leave', 'Half-Day') DEFAULT 'Present',
+  CheckIn      TIME DEFAULT NULL,
+  CheckOut     TIME DEFAULT NULL,
+  FOREIGN KEY (EmployeeID) REFERENCES employee(EmployeeID) ON DELETE CASCADE
+);
+
+-- ── 21. Complaint (Employee Grievance Portal) ─────────────────
 CREATE TABLE IF NOT EXISTS complaint (
-  complaint_id    INT AUTO_INCREMENT PRIMARY KEY,
-  employee_id     INT NOT NULL,
-  subject         VARCHAR(255) NOT NULL,
-  description     TEXT NOT NULL,
-  complaint_type  VARCHAR(100) DEFAULT 'general',
-  status          ENUM('open','under_review','resolved','closed') DEFAULT 'open',
-  resolution_notes TEXT,
-  submitted_at    DATETIME DEFAULT NOW(),
-  resolved_at     DATETIME,
-  FOREIGN KEY (employee_id) REFERENCES employee(employee_id) ON DELETE CASCADE
+  ComplaintID       INT PRIMARY KEY,
+  EmployeeID        INT NOT NULL,
+  ComplaintDateTime DATETIME NOT NULL,
+  Description       TEXT NOT NULL,
+  ComplaintStatus   ENUM('Open', 'Under Review', 'Resolved', 'Closed') DEFAULT 'Open',
+  Priority          ENUM('High', 'Medium', 'Low') DEFAULT 'Medium',
+  FOREIGN KEY (EmployeeID) REFERENCES employee(EmployeeID) ON DELETE CASCADE
 );
 
--- ============================================================
--- SEED DATA — Sample departments and designations
--- ============================================================
-INSERT IGNORE INTO department (department_name, head_of_department, description) VALUES
-('Engineering',     'Alice Johnson', 'Software development and IT'),
-('Human Resources', 'Bob Smith',     'HR and recruitment'),
-('Finance',         'Carol White',   'Finance and accounts'),
-('Marketing',       'Dave Clark',    'Marketing and sales');
+SET FOREIGN_KEY_CHECKS = 1;
 
-INSERT IGNORE INTO designation (designation_title, department_id, description) VALUES
-('Software Engineer',     1, 'Develops software products'),
-('Senior Engineer',       1, 'Leads technical projects'),
-('HR Manager',            2, 'Manages HR operations'),
-('HR Executive',          2, 'Recruitment and onboarding'),
-('Finance Analyst',       3, 'Financial analysis'),
-('Marketing Executive',   4, 'Handles marketing campaigns');
+-- ============================================================
+-- BASE SEED DATA (Admin, Departments, Designations, Payscales)
+-- ============================================================
+
+-- Default HR Admin (Username: admin, Password: admin123)
+INSERT INTO users (UserID, Username, PasswordHash, Role)
+VALUES (1, 'admin', '$2a$10$mQpBVQESkwpQrFnqVgC1AeHzMdRXCPEJ4qLGqf.3r7cxbKAT3w.vy', 'hr')
+ON DUPLICATE KEY UPDATE PasswordHash=VALUES(PasswordHash);
+
+-- Departments
+INSERT IGNORE INTO department (DeptID, DeptName, DeptVacancies, DeptPerformance, DeptNoOfEmployees) VALUES
+(1, 'Engineering',     5, 'Good', 12),
+(2, 'Marketing',       3, 'Good', 8),
+(3, 'Sales',           4, 'Medium', 10),
+(4, 'Human Resources', 2, 'Excellent', 6),
+(5, 'Finance',         2, 'Good', 5);
+
+-- Designations
+INSERT IGNORE INTO designation (DesignationID, DeptID, Role, Vacancies, NoOfEmployees) VALUES
+(1, 1, 'Software Developer',  3, 8),
+(2, 1, 'Senior Engineer',     2, 4),
+(3, 2, 'Marketing Lead',      1, 4),
+(4, 3, 'Sales Manager',       2, 6),
+(5, 4, 'HR Specialist',       1, 4),
+(6, 5, 'Financial Analyst',   1, 3);
+
+-- Payscales
+INSERT IGNORE INTO payscale (PayscaleID, Grade, BaseSalary, HRA, DA, Others) VALUES
+(1, 'Grade A (Executive)', 120000, 25000, 15000, 10000),
+(2, 'Grade B (Senior)',     90000, 18000, 10000,  7000),
+(3, 'Grade C (Mid-Level)',  65000, 13000,  7000,  5000),
+(4, 'Grade D (Associate)',  45000,  9000,  5000,  3000),
+(5, 'Grade E (Junior)',     32000,  6000,  3000,  2000);
+
+-- Initial Salaries
+INSERT IGNORE INTO salary (SalaryID, SalaryAmount, SalaryDate) VALUES
+(1, 170000, '2026-03-01'),
+(2, 125000, '2026-03-01'),
+(3,  90000, '2026-03-01'),
+(4,  62000, '2026-03-01'),
+(5,  43000, '2026-03-01');
+
+-- Initial Contracts
+INSERT IGNORE INTO contract (ContractID, ContractDate, NoticePeriod) VALUES
+(1, '2026-01-01', 30),
+(2, '2026-01-01', 45),
+(3, '2026-01-01', 60),
+(4, '2026-01-01', 90),
+(5, '2026-01-01', 30);
