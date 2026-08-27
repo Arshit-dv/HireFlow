@@ -32,7 +32,7 @@ sudo npm install -g pm2
 echo "🗄️ Initializing MySQL Database..."
 DB_PASS="hr_db_secure_pass_2026"
 sudo mysql -e "CREATE DATABASE IF NOT EXISTS hr_recruitment_db;"
-sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASS}';"
+sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_PASS}';"
 sudo mysql -e "FLUSH PRIVILEGES;"
 
 # 5. Import Canonical Schema
