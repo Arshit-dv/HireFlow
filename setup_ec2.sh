@@ -32,19 +32,21 @@ sudo npm install -g pm2
 echo "🗄️ Initializing MySQL Database..."
 DB_PASS="hr_db_secure_pass_2026"
 sudo mysql -e "CREATE DATABASE IF NOT EXISTS hr_recruitment_db;"
-sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_PASS}';"
+sudo mysql -e "CREATE USER IF NOT EXISTS 'hr_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
+sudo mysql -e "ALTER USER 'hr_user'@'localhost' IDENTIFIED BY '${DB_PASS}';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON hr_recruitment_db.* TO 'hr_user'@'localhost';"
 sudo mysql -e "FLUSH PRIVILEGES;"
 
 # 5. Import Canonical Schema
 echo "📄 Importing Database Schema..."
-mysql -u root -p"${DB_PASS}" hr_recruitment_db < database/schema.sql
+sudo mysql hr_recruitment_db < database/schema.sql
 
 # 6. Setup Backend Environment & Install Dependencies
 echo "⚙️ Setting up Node.js Backend..."
 cat <<EOF > backend/.env
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=root
+DB_USER=hr_user
 DB_PASSWORD=${DB_PASS}
 DB_NAME=hr_recruitment_db
 PORT=5000
@@ -54,6 +56,7 @@ JWT_SECRET=$(openssl rand -hex 32)
 JWT_EXPIRES_IN=7d
 HR_ADMIN_SECRET=admin123
 AWS_REGION=us-east-1
+AWS_S3_BUCKET=hr-proj-resume
 EOF
 
 cd backend
